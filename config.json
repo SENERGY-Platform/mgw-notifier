@@ -1,0 +1,11 @@
+{
+    "port": "8080",
+    "notification_url": "https://api.senergy.infai.org/notifications",
+    "debug": false,
+    "auth_endpoint":"",
+    "auth_client_id":"client-connector-lib",
+    "auth_user_name":"",
+    "auth_password":"",
+
+    "auth_expiration_time_buffer": 2
+}
