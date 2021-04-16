@@ -19,6 +19,7 @@ package relay
 import (
 	"github.com/SENERGY-Platform/mgw-notifier/pkg/auth"
 	"github.com/SENERGY-Platform/mgw-notifier/pkg/configuration"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -31,6 +32,7 @@ func NewRelay(config configuration.Config) (result *Relay, err error) {
 		return nil, err
 	}
 	return &Relay{
+		target: target,
 		config: config,
 		auth: &auth.OpenidToken{},
 		proxy: httputil.NewSingleHostReverseProxy(target),
@@ -38,6 +40,7 @@ func NewRelay(config configuration.Config) (result *Relay, err error) {
 }
 
 type Relay struct {
+	target *url.URL
 	auth   *auth.OpenidToken
 	config configuration.Config
 	proxy  *httputil.ReverseProxy
@@ -46,10 +49,14 @@ type Relay struct {
 func (this *Relay) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	token, err := this.auth.EnsureAccess(this.config)
 	if err != nil {
+		log.Println("ERROR: unable to get auth token:", err)
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	if this.config.Debug {
+		log.Println("forward", req.Method, req.URL.String(), "to", this.config.NotificationUrl)
+	}
+	req.Host = this.target.Host //proxy dos not replace host header
 	req.Header.Set("Authorization", token)
 	this.proxy.ServeHTTP(res, req)
 }
