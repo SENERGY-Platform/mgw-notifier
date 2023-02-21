@@ -33,7 +33,7 @@ import (
 	"time"
 )
 
-func TestPkg(t *testing.T){
+func TestPkg(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -71,7 +71,7 @@ func TestPkg(t *testing.T){
 	}
 
 	err = relay.Start(configuration.Config{
-		NotificationUrl:          backend.URL+"/foo",
+		NotificationUrl:          backend.URL + "/foo",
 		Port:                     port,
 		AuthExpirationTimeBuffer: 2,
 		AuthEndpoint:             auth.URL,
@@ -91,11 +91,16 @@ func TestPkg(t *testing.T){
 		return
 	}
 
-	if !reflect.DeepEqual(calls, map[string][]string{"/foo/bar": {"batz"}}) {
+	_, err = http.Post("http://localhost:"+port, "", bytes.NewBufferString("batz2"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if !reflect.DeepEqual(calls, map[string][]string{"/foo/bar": {"batz"}, "/foo": {"batz2"}}) {
 		t.Error(calls)
 	}
 }
-
 
 func GetFreePortStr() (string, error) {
 	intPort, err := GetFreePort()

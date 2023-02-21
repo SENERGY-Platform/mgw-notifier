@@ -23,19 +23,27 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 )
-
 
 func NewRelay(config configuration.Config) (result *Relay, err error) {
 	target, err := url.Parse(config.NotificationUrl)
 	if err != nil {
 		return nil, err
 	}
+	proxy := httputil.NewSingleHostReverseProxy(target)
+	origDirector := proxy.Director
+	proxy.Director = func(request *http.Request) {
+		origDirector(request)
+		request.URL.RawPath = strings.TrimSuffix(request.URL.RawPath, "/")
+		request.URL.Path = strings.TrimSuffix(request.URL.Path, "/")
+	}
+
 	return &Relay{
 		target: target,
 		config: config,
-		auth: &auth.OpenidToken{},
-		proxy: httputil.NewSingleHostReverseProxy(target),
+		auth:   &auth.OpenidToken{},
+		proxy:  proxy,
 	}, nil
 }
 
