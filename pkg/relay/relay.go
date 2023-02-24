@@ -17,8 +17,10 @@
 package relay
 
 import (
+	"bytes"
 	"github.com/SENERGY-Platform/mgw-notifier/pkg/auth"
 	"github.com/SENERGY-Platform/mgw-notifier/pkg/configuration"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -62,7 +64,10 @@ func (this *Relay) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if this.config.Debug {
-		log.Println("forward", req.Method, req.URL.String(), "to", this.config.NotificationUrl)
+		buf, _ := io.ReadAll(req.Body)
+		rdr := io.NopCloser(bytes.NewBuffer(buf))
+		req.Body = rdr
+		log.Printf("forward: endpoint = [%v] %v \n body = %v\n token = %v \n to %v \n", req.Method, req.URL.String(), string(buf), token, this.config.NotificationUrl)
 	}
 	req.Host = this.target.Host //proxy dos not replace host header
 	req.Header.Set("Authorization", token)
